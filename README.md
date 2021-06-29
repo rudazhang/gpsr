@@ -5,7 +5,7 @@ For the original research article documenting the method, see [the Citation sect
 
 ## Installation
 
-Option 1: Use `devtools`.
+Option 1: Install the developing verion via `devtools`.
 
 ``` R
 ## Skip the first line if you have already installed `devtools`.
@@ -13,7 +13,7 @@ install.packages(devtools)
 devtools::install_github("rudazhang/gpsr")
 ```
 
-Option 2: Install from bundled package.
+Option 2: Install from a bundled package.
 
 First download a bundled package from [releases](https://github.com/rudazhang/gpsr/releases), then
 
