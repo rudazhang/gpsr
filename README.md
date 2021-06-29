@@ -5,10 +5,37 @@ For the original research article documenting the method, see [the Citation sect
 
 ## Installation
 
+Option 1: Use `devtools`.
 
+``` R
+## Skip the first line if you have already installed `devtools`.
+install.packages(devtools)
+devtools::install_github("rudazhang/gpsr")
+```
+
+Option 2: Install from bundled package.
+
+First download a bundled package from [releases](https://github.com/rudazhang/gpsr/releases), then
+
+``` R
+## Run a line similar to the following.
+install.packages("~/Downloads/gpsr_0.0.0.9000.tar.gz", type="source")
+```
 
 ## Example Use
 
+After installing the package, you can load it via:
+
+``` R
+library(gpsr)
+```
+
+Example scripts are included in `script/` under the installed directory. Find it via:
+
+``` R
+path <- system.file("script", package = "gpsr")
+dir(path, full.names=TRUE)
+```
 
 
 ## Citation
