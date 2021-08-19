@@ -43,7 +43,7 @@ dir(path, full.names=TRUE)
 
 - Ruda Zhang, Simon Mak, and David Dunson.
   Gaussian Process Subspace Regression for Model Reduction.
-  arXiv, 2021.
+  arXiv, 2021. https://arxiv.org/abs/2107.04668
 
 BibTeX citation:
 ``` bibtex
