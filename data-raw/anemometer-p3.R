@@ -29,14 +29,14 @@ Ac <- A2 - A1
 ## saveRDS(listMat3, "param3.RDS")
 
 ## Export to MATLAB
-## sys <- mget(c("Ads", "Adf", "Ac", "B", "c"))
+## sys <- mget(c("Ads", "Adf", "Ac", "B", "C"))
 ## sys$Es <- E1
 ## sys$Ef <- E2 - E1
 ## system.time(rmatio::write.mat(sys, "anemometer3p.mat", compression = FALSE)) #12ms
 
 ## Experiment design ----------------------------------------------------------------------
 d <- 3
-nTrain <- 18
+nTrain <- 21
 nTest <- 100
 
 ## 1. Generate maximin-LHD sample for training:
