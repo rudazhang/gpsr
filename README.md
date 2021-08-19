@@ -1,6 +1,6 @@
 # Gaussian process subspace regression, an R package
 
-This is a prototypical implementation of *GP-subspace* in the R programming language.
+This is a prototypical implementation of *GPS* in the R programming language.
 For the original research article documenting the method, see [the Citation section](#citation).
 
 ## Installation
@@ -8,8 +8,9 @@ For the original research article documenting the method, see [the Citation sect
 Option 1: Install the developing verion via `devtools`.
 
 ``` R
-## Skip the first line if you have already installed `devtools`.
-install.packages(devtools)
+if (!("devtools" %in% installed.packages()[,"Package"])) {
+    install.packages(devtools)
+}
 devtools::install_github("rudazhang/gpsr")
 ```
 
@@ -40,4 +41,19 @@ dir(path, full.names=TRUE)
 
 ## Citation
 
-(arXiv paper to be added.)
+- Ruda Zhang, Simon Mak, and David Dunson.
+  Gaussian Process Subspace Regression for Model Reduction.
+  arXiv, 2021.
+
+BibTeX citation:
+``` bibtex
+@misc{ZhangRD2021gps,
+  title={Gaussian Process Subspace Regression for Model Reduction},
+  author={Ruda Zhang and Simon Mak and David Dunson},
+  year={2021},
+  eprint={2107.04668},
+  archivePrefix={arXiv},
+  primaryClass={math.ST},
+  url={https://arxiv.org/abs/2107.04668},
+}
+```
