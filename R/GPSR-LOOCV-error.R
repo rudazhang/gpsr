@@ -63,9 +63,10 @@ LOODistSvd <- function(i, Kinv, VbtX) {
     vecnorm(angle)
 }
 
-## Compute LOO Riemannian distances: EVD version
-## Require: (XtX; k, Jk)
-LOODistEvd <- function(i, Kinv, VbtX) {
+#' Compute LOO prediction: EVD version
+#' @return LOO prediction in the global basis, \equation{\circ{V}_{-i}}.
+#' @note Require: (XtX; k, Jk)
+LOOPredEvd <- function(i, Kinv, VbtX) {
     ## Row/colum indices of the i-th training point.
     idxi <- (i-1)*k + seq(k)
     ## Construct \Delta_{-i}, positive semi-definite
@@ -77,29 +78,46 @@ LOODistEvd <- function(i, Kinv, VbtX) {
     Deltai <- forceSymmetric(Deltai)
     ## Construct \Pi_{-1}, positive semi-definite
     PIi <- XtX[-idxi, -idxi] * kronecker(Deltai, Jk) #0.02s
+    ## Add a nugget for numerical stability
+    maxPIi <- max(abs(diag(PIi)))
+    PIi <- PIi + Matrix::Diagonal(k * (l-1), epsMachine * maxPIi) #4ms
     PIi <- as(PIi, "dpoMatrix") ## 0.01s, computes Cholesky factor
     ## Construct P_i = A_{-i} (\Pi_{-i})^{-1} A_{-i}^T
     Ami <- VbtX[,-idxi]
     Sol <- solve(PIi, t(Ami)) #0.01s
     Pi <- Ami %*% Sol #3ms
+
     ## Added for the special case of G_{1,2}.
     if (nrow(Pi) == 2) {
         evd <- eigen(Pi, symmetric = TRUE)
-        evd$vectors <- evd$vectors[, seq(k)]
+        return(evd$vectors[, seq(k)])
     } else {
         evd <- RSpectra::eigs_sym(Pi, k) #8ms (full EVD, 88ms)
+        return (evd$vectors)
     }
-    sigma <- svd(Matrix::crossprod(VbtX[,idxi], evd$vectors))$d #5ms
+}
+
+#' Compute LOO Riemannian distances: EVD version
+#' @note Require: (XtX; k, Jk)
+LOODistEvd <- function(i, Kinv, VbtX) {
+    Vcirc <- LOOPredEvd(i, Kinv, VbtX)
+    ## Row/colum indices of the i-th training point.
+    idxi <- (i-1)*k + seq(k)
+    sigma <- svd(Matrix::crossprod(VbtX[,idxi], Vcirc))$d #5ms
     sigma[sigma > 1] <- 1
     angle <- acos(sigma)
     vecnorm(angle)
 }
 
 #' Gradient of squared LOOCV Riemannian distance
-#' @param rGKinv an order-l matrix that consists of \eqn{\partial k_{p,q} / k_{p,q}}.
-#' @param trunk Extended truncated EVD for approximate pseudo-inverse, defaults to 2*k.
+#' @param lrGKinv a list of order-l matrices that consists of \eqn{\partial k_{p,q} / k_{p,q}},
+#' if using isotropic lengthscales; or a list of them, if using separable lengthscales.
+#' @param trunk Extended truncated EVD for approximate pseudo-inverse, defaults to 2*k, max r.
+#' @return a vector for separable lengthscales, or a scalar for isotropic lengthscales.
 #' @note Require: (XtX; k, l, Jk)
-gradLOODist2Evd <- function(i, Kinv, rGKinv, VbtX, trunk = 2*k) {
+#' @details If `trunk` is close to r, `RSpectra::eigs_sym()` throws a warning that `eigen()` is used.
+gradLOODist2Evd <- function(i, Kinv, lrGKinv, VbtX, trunk) {
+    ## Duplicate part with `LOOPredEvd()`
     ## Row/colum indices of the i-th training point.
     idxi <- (i-1)*k + seq(k)
     ## Construct \Delta_{-i}, positive semi-definite
@@ -113,48 +131,54 @@ gradLOODist2Evd <- function(i, Kinv, rGKinv, VbtX, trunk = 2*k) {
     XtXi <- XtX[-idxi, -idxi] #15ms (Suprise! This actually takes quite some time.)
     PIi <- XtXi * kronecker(Deltai, Jk) #13ms (23s in one line)
     PIi <- as(PIi, "dpoMatrix") ## 0.01s, computes Cholesky factor
-
-    ## Gradient of \Delta_{-i}, not positive semi-definite
-    rGKinvVi <- tcrossprod(rGKinv[-i, i], rep(1, l-1))
-    rGKinvMi <- rGKinv[-i, -i] + rGKinv[i, i] - rGKinvVi - t(rGKinvVi)
-    rGKinvMi <- forceSymmetric(rGKinvMi)
-    GDeltai <- (Deltai + 1) * rGKinvMi
-    ## Gradient of \Pi_{-i}, not positive semi-definite
-    GPIi <- XtXi * kronecker(GDeltai, Jk) #13ms
-
     ## Construct P_i = A_{-i} (\Pi_{-i})^{-1} A_{-i}^T
     Ami <- VbtX[,-idxi]
     Sol <- solve(PIi, t(Ami)) #0.01s
     Pi <- Ami %*% Sol #3ms
+
     ## Extended truncated eigen-decomposition for approximate pseudo-inverse
     evd <- RSpectra::eigs_sym(Pi, trunk) #30ms (k EVD, 10ms; full EVD, 88ms)
     eigs <- evd$values
     Vcheck <- evd$vectors
     Vk <- Vcheck[, seq(k)]
-    ## Compute gradient of top-k eigenvectors: 7ms; for loop, 123ms
-    GPiVk <- Matrix::crossprod(-Sol, GPIi %*% (Sol %*% Vk)) #4ms; v
-    VtGPiVk <- Matrix::crossprod(Vcheck, GPiVk) #u
     evp <- tcrossprod(rep(1, trunk), eigs[seq(k)])
     evShiftRev <- 1 / (evp - eigs)
     diag(evShiftRev) <- 0
-    wVtGPiVk <- (evShiftRev - 1 / evp) * VtGPiVk #w
-    GVk <- Vcheck %*% wVtGPiVk + GPiVk %*% Diagonal(x = 1 / eigs[seq(k)])
-
     ## SVD for principal angles
     Ai <- VbtX[,idxi]
     svd <- svd(Matrix::crossprod(Ai, Vk)) #5ms
     sigma <- svd$d
     sigma[sigma > 1] <- 1
     angle <- acos(sigma)
-    ## Gradient of singular values: 6ms; for loop, 11ms
-    GSV <- function(.) as.vector(Matrix::crossprod(Ai %*% svd$u[, .], GVk %*% svd$v[, .]))
-    Gsigma <- vapply(seq(k), GSV, double(1))
-    ## Gradient of squared LOOCV Riemannian distance
+    ## Partial gradient of squared LOOCV Riemannian distance
     ## Direct form may cause large error, ues series form for sigma = 1 - x, x < 1e-5.
     d <- 1 - sigma
     gd2s <- ifelse(d > 1e-5, angle / sqrt(1 - sigma^2),
                    1 + d/3 + 2/15 * d^2 + 2/35 * d^3 + 8/315 * d^4 + 8/693 * d^5)
-    gd2 <- -2 * sum(gd2s * Gsigma)
+
+    ## Partial derivative of squared LOOCV Riemannian distance w.r.t. one lengthscale
+    ## Require: Deltai, XtXi, Sol; evd (eigs, Vcheck, Vk), evp (evShiftRev), svd (u, v), gd2s;
+    ## i, l, k, Jk.
+    pdd2 <- function(rGKinv) {
+        ## Gradient of \Delta_{-i}, not positive semi-definite
+        rGKinvVi <- tcrossprod(rGKinv[-i, i], rep(1, l-1))
+        rGKinvMi <- rGKinv[-i, -i] + rGKinv[i, i] - rGKinvVi - t(rGKinvVi)
+        rGKinvMi <- Matrix::forceSymmetric(rGKinvMi)
+        GDeltai <- (Deltai + 1) * rGKinvMi
+        ## Gradient of \Pi_{-i}, not positive semi-definite
+        GPIi <- XtXi * kronecker(GDeltai, Jk) #13ms
+        ## Gradient of top-k eigenvectors: 7ms (for loop, 123ms)
+        GPiVk <- Matrix::crossprod(-Sol, GPIi %*% (Sol %*% Vk)) #4ms; v
+        VtGPiVk <- Matrix::crossprod(Vcheck, GPiVk) #u
+        wVtGPiVk <- (evShiftRev - 1 / evp) * VtGPiVk #w
+        GVk <- Vcheck %*% wVtGPiVk + GPiVk %*% Diagonal(x = 1 / eigs[seq(k)])
+        ## Gradient of singular values: 6ms (for loop, 11ms)
+        GSV <- function(.) as.vector(Matrix::crossprod(Ai %*% svd$u[, .], GVk %*% svd$v[, .]))
+        Gsigma <- vapply(seq(k), GSV, double(1))
+        ## Gradient of squared LOOCV Riemannian distance
+        -2 * sum(gd2s * Gsigma)
+    }
+    gd2 <- vapply(lrGKinv, pdd2, double(1))
     gd2
 }
 
@@ -162,7 +186,7 @@ gradLOODist2Evd <- function(i, Kinv, rGKinv, VbtX, trunk = 2*k) {
 #' @note require (thetaTrain, XtX, VbtX; getKinv)
 #' @export
 hSSDist <- function(len) {
-    message("parameter: ", len)
+    message("parameter: ", paste(format(len, digits = 8), collapse = "\t"))
     Kinv <- getKinv(thetaTrain, len)
     l <- ifelse(is.matrix(thetaTrain), nrow(thetaTrain), length(thetaTrain))
     dist <- vapply(seq_len(l), function(.) LOODistEvd(., Kinv, VbtX), double(1))
@@ -171,18 +195,28 @@ hSSDist <- function(len) {
 ## system.time(ret <- hSSDist(0.5)) #0.826s
 
 #' Gradient of sum of squared LOOCV Riemannian distances
-#' @note require: (XtX; k, Jk, l)
+#' @param len Correlation lengthscales.
+#' @param trunk Extended truncated EVD for approximate pseudo-inverse, defaults to 2*k, max r.
+#' @return If `len` is scalar, derivative in isotropic lengthscales;
+#' if vector, gradient in separable lengthscales.
+#' @note require: (XtX, VbtX; k, Jk)
 #' @export
-gSSDist <- function(len) {
+gSSDist <- function(len, trunk = 2*k) {
+    l <- ifelse(is.matrix(thetaTrain), nrow(thetaTrain), length(thetaTrain))
+    np <- length(len)
     K <- kerSEmat(thetaTrain, len = len)
     Kinv <- solve(K)
-    GK <- gradSEmat(thetaTrain, len, K) # not positive semi-definite
-    GKinv <- -Kinv %*% GK %*% Kinv
-    GKinv <- forceSymmetric(GKinv)
-    rGKinv <- GKinv / Kinv
-    l <- ifelse(is.matrix(thetaTrain), nrow(thetaTrain), length(thetaTrain))
-    gd2 <-  vapply(seq_len(l), function(.) gradLOODist2Evd(., Kinv, rGKinv, VbtX), double(1))
-    sum(gd2)
+    lGK <- gradSEmat(thetaTrain, len, K) # not positive semi-definite
+    getRGKinv <- function(GK) {
+        GKinv <- -Kinv %*% GK %*% Kinv
+        GKinv <- forceSymmetric(GKinv)
+        rGKinv <- GKinv / Kinv
+        rGKinv
+    }
+    lrGKinv <- lapply(lGK, getRGKinv)
+    gd2 <-  vapply(seq_len(l), function(.) gradLOODist2Evd(., Kinv, lrGKinv, VbtX, trunk), double(np))
+    if (np == 1) return(sum(gd2))
+    return(rowSums(gd2))
 }
 
 ## VbtX <- with(svdX, tcrossprod(Diagonal(x = d), v)) #0.14s
