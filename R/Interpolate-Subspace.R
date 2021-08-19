@@ -35,7 +35,7 @@ TangentInterpLagrange <- function(theta, ref, neigh) {
 ## theta <- 0.12
 
 #' Tangent vector interpolation with (multiquadric) radial basis function
-#' @param theta New parameter point, a vector
+#' @param theta New parameter point, a length-d vector or a scalar
 #' @note Require (thetaTrain, listGL, listXtrain)
 TangentInterpRBF <- function(theta, ref, neigh) {
     X0 <- listXtrain[[ref]]
@@ -46,7 +46,12 @@ TangentInterpRBF <- function(theta, ref, neigh) {
     zerotan <- double(n * k)
     Mtan <- vapply(seq(nn), function(i) as.vector(listGL[[ref]][[cNeigh[i]]]), zerotan)
     Mtan <- cbind(matrix(zerotan, ncol = 1), Mtan)
-    Interp <- MultiquadricRBF(thetaTrain[c(ref, neigh), ], t(Mtan))
+    if (is.matrix(thetaTrain)) {
+        pInt <- thetaTrain[c(ref, neigh), ]
+    } else {
+        pInt <- thetaTrain[c(ref, neigh)]
+    }
+    Interp <- MultiquadricRBF(pInt, t(Mtan))
     M <- matrix(Interp(theta), nrow = n)
     ## Horizontal projection
     Z <- M - X0 %*% crossprod(X0, M)

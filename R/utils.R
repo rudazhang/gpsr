@@ -56,7 +56,7 @@ listMatrix2Array <- function(listMr) {
 #' @param x a set of points, either a length-n vector or an n-by-p matrix
 #' @param x0 a point, either a scalar or a length-p vector
 distvec <- function(x, x0) {
-    if (is.matrix(x)) {
+    if (is.matrix(x) | is(x, "Matrix")) {
         dx <- x - rep(x0, each = nrow(x))
         dist <- apply(dx, 1, vecnorm)
     } else {

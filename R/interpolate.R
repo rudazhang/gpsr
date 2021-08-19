@@ -68,15 +68,18 @@ PiecewiseLinearInterp <- function(p) {
 ## points(p, rep(1, np), pch = 19, col = seq(np))
 
 #' Hardy's multiquadrics, a radial basis function
-#' @param p Interpolation points, a n-by-d matrix
+#' @param p Interpolation points, a length-n vector or an n-by-d matrix
 #' @param f Function values, a length-n vector or an n-by-q matrix (vector-valued function)
 #' @return A function that takes in a new point
 #' and returns the value of the interpolation function.
 #' @note Parameter computed per [@Amsallem2010, Appendix H]
 MultiquadricRBF <- function(p, f) {
-    ## d <- ncol(p)
-    ranges <- apply(p, 2, function(x) diff(range(x)))
-    maxRange <- max(ranges)
+    if (is.matrix(p)) {
+        ranges <- apply(p, 2, function(x) diff(range(x)))
+        maxRange <- max(ranges)
+    } else {
+        maxRange <- diff(range(p))
+    }
     R <- sqrt(maxRange / 10)
     q <- 0.25
     D <- as.matrix(dist(p))

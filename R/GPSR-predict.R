@@ -9,7 +9,7 @@ epsMachine <- .Machine$double.eps
 #' GP subspace regression prediction, eigen-decomposition version
 #' 36ms, w/o messaging (k=20,l=12); faster than SVD version!
 #' @export
-GPSubspacePredEVD <- function(thetaNew, thetaTrain, len, t = k) {
+GPSubspacePredEVD <- function(thetaNew, thetaTrain, len, K, t = k) {
     l <- ncol(K)
     k <- ncol(XtX) %/% l
     ## message("Predicting at parameter point: ", thetaNew)
