@@ -186,7 +186,7 @@ gradLOODist2Evd <- function(i, Kinv, lrGKinv, VbtX, trunk) {
 #' @note require (thetaTrain, XtX, VbtX; getKinv)
 #' @export
 hSSDist <- function(len) {
-    message("parameter: ", paste(format(len, digits = 8), collapse = "\t"))
+    message(paste(c("[objective]", "parameter: ", format(len, digits = 8)), collapse = "\t"))
     Kinv <- getKinv(thetaTrain, len)
     l <- ifelse(is.matrix(thetaTrain), nrow(thetaTrain), length(thetaTrain))
     dist <- vapply(seq_len(l), function(.) LOODistEvd(., Kinv, VbtX), double(1))
@@ -202,6 +202,7 @@ hSSDist <- function(len) {
 #' @note require: (XtX, VbtX; k, Jk)
 #' @export
 gSSDist <- function(len, trunk = 2*k) {
+    message(paste(c("[gradient]", "parameter: ", format(len, digits = 8)), collapse = "\t"))
     l <- ifelse(is.matrix(thetaTrain), nrow(thetaTrain), length(thetaTrain))
     np <- length(len)
     K <- kerSEmat(thetaTrain, len = len)

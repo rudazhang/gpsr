@@ -75,9 +75,11 @@ PiecewiseLinearInterp <- function(p) {
 #' @note Parameter computed per [@Amsallem2010, Appendix H]
 MultiquadricRBF <- function(p, f) {
     if (is.matrix(p)) {
+        d <- ncol(p)
         ranges <- apply(p, 2, function(x) diff(range(x)))
         maxRange <- max(ranges)
     } else {
+        d <- 1
         maxRange <- diff(range(p))
     }
     R <- sqrt(maxRange / 10)
@@ -87,6 +89,7 @@ MultiquadricRBF <- function(p, f) {
     B <- (D^2 + R^2)^q
     a <- solve(B, f)
     function(x) {
+        stopifnot(length(x) == d)
         dist <- distvec(p, x)
         b <- (dist^2 + R^2)^q
         as.vector(crossprod(b, a))
