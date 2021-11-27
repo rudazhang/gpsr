@@ -37,7 +37,7 @@ Ac <- A2 - A1
 ## Experiment design ----------------------------------------------------------------------
 d <- 3
 nTrain <- 21
-nTest <- 100
+nTest <- 100 #1e3
 
 ## 1. Generate maximin-LHD sample for training:
 ## SLHD version: returns Latin square grid; use t = 1 for the standard MmLHD (no slicing).
@@ -50,7 +50,7 @@ rgl::plot3d(ret$StandDesign, xlim = c(0, 1), ylim = c(0, 1), zlim = c(0, 1))
 ## 2. Generate testing sample:
 ## 2a. Augment training sample via maximin (preferred): quite slow, but still acceptable.
 ## Use option for distance to boundary: points clearly away from boundary.
-system.time(retAug <- maximin::maximin(nTest, d, Xorig = ret$StandDesign, boundary = TRUE)) #22s
+system.time(retAug <- maximin::maximin(nTest, d, Xorig = ret$StandDesign, boundary = TRUE)) #22s;915s
 str(retAug)
 ## points(retAug$Xf[-seq(nTrain),], col = "red")
 rgl::open3d()
