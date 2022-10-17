@@ -19,7 +19,7 @@ GPSubspacePredEVD <- function(thetaNew, thetaTrain, len, K, t = k) {
     ## DO NOT DO THIS! Using numerical inverse to solve linear equations gives large error.
     ## wv <- Kinv %*% cv
     wv <- solve(K, cv)
-    ## DKDinv (aka Pi): D_v^-1 K^-1 D_v^-1
+    ## DKDinv (aka K_tilde): D_v^-1 K^-1 D_v^-1
     ## Better use linear solve for accuracy. Additional cost is negligible.
     ## wrev <- 1 / wv
     ## DKDinv <- Kinv * tcrossprod(wrev) #1ms
@@ -28,7 +28,7 @@ GPSubspacePredEVD <- function(thetaNew, thetaTrain, len, K, t = k) {
     DKDinv <- Dwrev %*% Khat #1ms
     ## forceSymmetric() can cause large error. The extra cost of symmpart() is negligible.
     DKDinv <- Matrix::symmpart(DKDinv)
-    ## Add a nugget for numerical stability
+    ## Add a nugget for numerical stability (Must be positive-definite.)
     maxDKDinv <- max(abs(diag(DKDinv)))
     DKDinv <- DKDinv + Matrix::Diagonal(l, epsMachine * maxDKDinv) #4ms
     XPX <- XtX * kronecker(DKDinv, Matrix::Matrix(1, k, k)) #7ms

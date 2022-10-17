@@ -103,10 +103,12 @@ LOODistEvd <- function(i, Kinv, VbtX) {
     Vcirc <- LOOPredEvd(i, Kinv, VbtX)
     ## Row/colum indices of the i-th training point.
     idxi <- (i-1)*k + seq(k)
-    sigma <- svd(Matrix::crossprod(VbtX[,idxi], Vcirc))$d #5ms
-    sigma[sigma > 1] <- 1
-    angle <- acos(sigma)
-    vecnorm(angle)
+
+    ## sigma <- svd(Matrix::crossprod(VbtX[,idxi], Vcirc))$d #5ms
+    ## sigma[sigma > 1] <- 1
+    ## angle <- acos(sigma)
+    ## vecnorm(angle)
+    RiemannianDist(VbtX[,idxi], Vcirc)
 }
 
 #' Gradient of squared LOOCV Riemannian distance
