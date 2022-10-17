@@ -42,18 +42,19 @@ dir(path, full.names=TRUE)
 ## Citation
 
 - Ruda Zhang, Simon Mak, and David Dunson.
-  Gaussian Process Subspace Regression for Model Reduction.
-  arXiv, 2021. https://arxiv.org/abs/2107.04668
+  Gaussian Process Subspace Prediction for Model Reduction.
+  SIAM Journal on Scientific Computing, 2022. https://epubs.siam.org/doi/10.1137/21M1432739
 
 BibTeX citation:
 ``` bibtex
-@misc{ZhangRD2021gps,
-  title={Gaussian Process Subspace Regression for Model Reduction},
-  author={Ruda Zhang and Simon Mak and David Dunson},
-  year={2021},
-  eprint={2107.04668},
-  archivePrefix={arXiv},
-  primaryClass={math.ST},
-  url={https://arxiv.org/abs/2107.04668},
+@Article{ZhangRD2022gps,
+  author        = {Zhang, Ruda and Mak, Simon and Dunson, David},
+  title         = {Gaussian Process Subspace Prediction for Model Reduction},
+  journal       = {SIAM Journal on Scientific Computing},
+  year          = {2022},
+  volume        = {44},
+  number        = {3},
+  pages         = {A1428-A1449},
+  doi           = {10.1137/21M1432739},
 }
 ```
