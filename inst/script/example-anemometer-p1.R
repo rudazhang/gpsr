@@ -1,5 +1,5 @@
 ## PROM benchmark problem: Anemometer, 1 parameter.
-## library(gpsr)
+library(gpsr)
 library(Matrix)
 
 ## Data I/O ----------------------------------------------------------------------
@@ -36,21 +36,22 @@ timehorizon <- 0.05
 timestep <- 1e-3    #@Benner2017, Ch. 9
 steps <- as.integer(timehorizon / timestep) #50
 system.time(listA <- purrr::map(thetaTrain, getA)) #64ms
-system.time(listX <- purrr::map(listA, ~backwardEuler(E, ., B, dt = timestep, nt = steps))) #4.2s
+solveSystem <- function(A) gpsr:::backwardEuler(E, A, B, dt = timestep, nt = steps)
+system.time(listX <- purrr::map(listA, solveSystem)) #4.2s
 
 ## Local POD
 system.time(llSVD <- purrr::map(listX, ~irlba::irlba(., k))) #0.55s
 listVpod <- purrr::map(llSVD, ~ .$u)
 
 ## Compute reduced system matrices
-system.time(romPOD <- directROM(thetaTrain, listA, listVpod, E, B, C)) #0.1s
+system.time(romPOD <- gpsr:::directROM(thetaTrain, listA, listVpod, E, B, C)) #0.1s
 str(romPOD)
 
 ## GP subspace regression ------------------------------------------------------------
 
 ## (0) Prepare X
 listXtrain <- listVpod
-AX <- gpsr::listMatrix2Array(listXtrain)
+AX <- gpsr:::listMatrix2Array(listXtrain)
 str(AX)
 X <- Matrix::Matrix(AX, n, k * l)
 
@@ -60,16 +61,18 @@ list2env(ret, .GlobalEnv)
 
 ## (2) Hyperparameter tuning
 ## Require (thetaTrain, XtX, VbtX; Jk)
-Jk <- J(k)
+Jk <- gpsr:::J(k)
 ## Option 1: Default length-scale, no tuning.
-len <- gpsr::defaultLength(d = 1, l)
+(len <- gpsr::defaultLength(d = 1, l))
 ## Option 2: Use LOOCV error.
-system.time(ret <- optimize(gpsr::hSSDist, lower = 0.2, upper = 0.8, tol = 1e-2)) #0.5s
+lenUpper <- len * 2
+lenLower <- len * 0.5
+system.time(ret <- optimize(gpsr::hSSDist, lower = lenLower, upper = lenUpper, tol = 1e-2)) #0.5s
 ## Option 3: Use LOOCV error and gradient.
 ToleranceLevel <- function(x) list(factr = 10^(15-x))
 tol2 <- ToleranceLevel(2)
 system.time(ret2 <- optim(len, gpsr::hSSDist, gpsr::gSSDist, method = "L-BFGS-B",
-                          lower = 0.2, upper = 0.8, control = tol2)) #1.2s
+                          lower = lenLower, upper = lenUpper, control = tol2)) #1.2s
 ## Not optimal implementation: `optim()` needs separate arguments for objective and gradient,
 ## while `gSSDist()` can compute both.
 
@@ -78,11 +81,11 @@ len <- ret$minimum
 ## Correlation matrix
 K <- gpsr::kerSEmat(thetaTrain, len = len)
 thetaTest <- seq(0, 1, by = 0.01)
-system.time(ret <- purrr::map(thetaTest, ~gpsr::GPSubspacePredEVD(., thetaTrain, len))) #1s
+system.time(ret <- purrr::map(thetaTest, ~gpsr::GPSubspacePredEVD(., thetaTrain, len, K))) #1s
 ## (Optional) explicit form of reduced bases: uncessessary in case of (approximate) affine dependency
 system.time(listVpred <- purrr::map(ret, ~svdX$u %*% .$Vcirc)) #2s
 
 ## (4) Compute ROM
 listA <- purrr::map(thetaTest, getA)
-romGPSR <- directROM(thetaTest, listA, listVpred, E, B, C)
+romGPSR <- gpsr:::directROM(thetaTest, listA, listVpred, E, B, C)
 str(romGPSR)
