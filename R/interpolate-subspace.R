@@ -5,6 +5,7 @@
 #' Compute Grassmann logarithm at p_i for all points p_j, j != il.
 #' @note Require (listXtrain)
 GL2i <- function(i) {
+    l <- length(listXtrain)
     id <- setdiff(seq(l), i)
     ret <- purrr::map(id, ~GrassmannLog(listXtrain[[i]], listXtrain[[.]]))
     names(ret) <- id
