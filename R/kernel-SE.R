@@ -23,7 +23,7 @@ kerSEmat <- function(x, x0 = NULL, len = 1) {
         Dist <- as(dist(xs), "Matrix")
         K <- exp(-Dist^2 / 2)
         ## Add a nugget to ensure positive definiteness
-        K <- K + Diagonal(ncol(K), 8 * .Machine$double.eps) #4ms
+        K <- K + Diagonal(ncol(K), ncol(K) * .Machine$double.eps) #4ms
         return(as(K, "dpoMatrix")) # Computes Cholesky factor
     } else {
         x0s <- x0 / len

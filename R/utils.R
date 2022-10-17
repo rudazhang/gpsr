@@ -61,7 +61,7 @@ isMatrix <- function(x) {
 #' @param x a set of points, either a length-n vector or an n-by-p matrix
 #' @param x0 a point, either a scalar or a length-p vector
 distvec <- function(x, x0) {
-    if (gpsr::isMatrix(x)) {
+    if (isMatrix(x)) {
         dx <- x - rep(x0, each = nrow(x))
         dist <- apply(dx, 1, vecnorm)
     } else {
