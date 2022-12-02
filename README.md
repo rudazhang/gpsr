@@ -9,7 +9,7 @@ Option 1: Install the developing verion via `devtools`.
 
 ``` R
 if (!("devtools" %in% installed.packages()[,"Package"])) {
-    install.packages(devtools)
+    install.packages("devtools")
 }
 devtools::install_github("rudazhang/gpsr")
 ```
