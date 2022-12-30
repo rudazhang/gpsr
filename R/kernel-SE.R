@@ -60,8 +60,9 @@ getKinv <- function(x, len) {
     solve(K)
 }
 
-#' Rule-of-thumb lengthscale of the SE kernel for GP-subspace
+#' Rule-of-thumb lengthscale of the SE kernel for GPS
 #' @param d Parameter dimension
 #' @param l Sample size
+#' @return Isotropic lengthscale for the unit box [0, 1]^d.
 #' @export
 defaultLength <- function(d, l) 8/3 * sqrt(d) * d / l
