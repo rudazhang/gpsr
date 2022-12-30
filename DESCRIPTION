@@ -1,7 +1,7 @@
 Package: gpsr
 Type: Package
 Title: Gaussian Process Subspace Regression
-Version: 0.0.0.9100
+Version: 0.0.0.9200
 Authors@R: 
     person(given = "Ruda", family = "Zhang", role = c("aut", "cre"),
            email = "rudazhan@gmail.com", comment = c(ORCID = "0000-0002-2899-1008"))
