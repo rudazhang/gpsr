@@ -1,4 +1,4 @@
-# Gaussian process subspace regression, an R package
+# Gaussian process subspace regression, an R package [DEFUNCT: Development has moved to [https://github.com/UQUH/gpsr](https://github.com/UQUH/gpsr)]
 
 This is a prototypical implementation of *GPS* in the R programming language.
 For the original research article documenting the method, see [the Citation section](#citation).
